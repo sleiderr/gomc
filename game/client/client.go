@@ -6,6 +6,7 @@ import (
 	"net"
 
 	"github.com/sleiderr/gomc/cnet/packet"
+	"github.com/sleiderr/gomc/cnet/packet/slp"
 	"github.com/sleiderr/gomc/game"
 )
 
@@ -23,12 +24,15 @@ func NewClient(raw *net.TCPConn) *Client {
 
 func (c *Client) HandlePacket(rPacket *packet.CraftPacket) error {
 	var err error
+
 	switch c.State() {
 	case Handshake:
 		err = c.handleHandshake(rPacket)
 	case Status:
 		if rPacket.Id() == packet.Handshake {
 			err = c.handleHandshake(rPacket)
+		} else {
+			err = c.handleStatus(rPacket)
 		}
 	case Login:
 		if rPacket.Id() == packet.Handshake {
@@ -37,6 +41,14 @@ func (c *Client) HandlePacket(rPacket *packet.CraftPacket) error {
 	}
 
 	return err
+}
+
+func (c *Client) handleStatus(rPacket *packet.CraftPacket) error {
+	if pPacket, ok := rPacket.Payload().(*slp.PingPacket); rPacket.Id() == packet.Ping && ok {
+		c.Pong(pPacket)
+	}
+
+	return nil
 }
 
 func (c *Client) handleHandshake(rPacket *packet.CraftPacket) error {
@@ -55,9 +67,15 @@ func (c *Client) handleHandshake(rPacket *packet.CraftPacket) error {
 
 		statusResp := packet.NewCraftPacket(packet.Handshake, &packet.StatusResponsePacket{Status: string(status)})
 		c.raw.Write(statusResp.AsRaw().Bytes())
+	} else {
+		c.state = ClientState(hPacket.NextState)
 	}
 
 	return nil
+}
+
+func (c *Client) Pong(in *slp.PingPacket) {
+	c.raw.Write(packet.NewCraftPacket(packet.Ping, in).AsRaw().Bytes())
 }
 
 func (c *Client) NextState() {

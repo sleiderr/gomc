@@ -3,6 +3,7 @@ package packet
 import (
 	"fmt"
 
+	"github.com/sleiderr/gomc/cnet/packet/slp"
 	"github.com/sleiderr/gomc/ctypes"
 )
 
@@ -10,6 +11,7 @@ type CraftPacketType int32
 
 const (
 	Handshake CraftPacketType = 0
+	Ping      CraftPacketType = 1
 )
 
 type CraftPacket struct {
@@ -34,6 +36,10 @@ func ParseRaw(raw *RawCraftPacket) (*CraftPacket, error) {
 	switch packetType := CraftPacketType(raw.packetId.Value()); packetType {
 	case Handshake:
 		p := &HandshakePacket{}
+		err = p.FillFromRaw(raw.Data())
+		payload = p
+	case Ping:
+		p := &slp.PingPacket{}
 		err = p.FillFromRaw(raw.Data())
 		payload = p
 	default:
