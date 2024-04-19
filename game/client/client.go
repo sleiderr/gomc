@@ -13,6 +13,7 @@ import (
 type Client struct {
 	raw   *net.TCPConn
 	state ClientState
+	login *LoginTransaction
 }
 
 func NewClient(raw *net.TCPConn) *Client {
@@ -35,9 +36,7 @@ func (c *Client) HandlePacket(rPacket *packet.CraftPacket) error {
 			err = c.handleStatus(rPacket)
 		}
 	case Login:
-		if rPacket.Id().Id == packet.HandshakePacketId {
-			err = c.handleHandshake(rPacket)
-		}
+		err = c.handleLogin(rPacket)
 	}
 
 	return err

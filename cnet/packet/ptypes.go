@@ -4,12 +4,16 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/sleiderr/gomc/cnet/packet/login"
 	"github.com/sleiderr/gomc/cnet/packet/slp"
 )
 
 const (
-	HandshakePacketId = 0
-	PingPacketId      = 1
+	HandshakePacketId    = 0
+	LoginStartPacketId   = 0
+	PingPacketId         = 1
+	LoginSuccessPacketId = 2
+	LoginAckPacketId     = 3
 )
 
 type CraftPacketType struct {
@@ -27,9 +31,12 @@ func InitPacketTypes() {
 	registerPacketType(NewPacketType(0, 0), (*HandshakePacket)(nil))
 	registerPacketType(NewPacketType(1, 0), (*HandshakePacket)(nil))
 	registerPacketType(NewPacketType(1, 1), (*slp.PingPacket)(nil))
+	registerPacketType(NewPacketType(2, 0), (*login.LoginStart)(nil))
+	registerPacketType(NewPacketType(2, 3), (*login.LoginAck)(nil))
 }
 
 func MakePacket(t CraftPacketType) (CraftPacketPayload, error) {
+	fmt.Println(t)
 	if _, ok := packetTypeRegistry[t]; !ok {
 		return nil, fmt.Errorf("Unexpected packet (invalid packetId and state combination)")
 	}
