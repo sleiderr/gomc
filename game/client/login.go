@@ -16,6 +16,7 @@ const (
 	LoginStart LoginStatus = iota
 	AwaitingEncryptionResponse
 	LoginSuccess
+	ConfigurationOngoing
 	LoggedIn
 )
 
@@ -48,7 +49,7 @@ func (c *Client) handleLogin(rPacket *packet.CraftPacket) error {
 			return fmt.Errorf("Unexpected login acknowledgment")
 		}
 
-		c.login.Status = LoggedIn
+		c.login.Status = ConfigurationOngoing
 		c.state = Configuration
 	}
 
