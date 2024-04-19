@@ -1,4 +1,4 @@
-package data_types
+package ctypes
 
 import (
 	"bufio"
@@ -11,20 +11,20 @@ type VarLong struct {
 }
 
 func ReadVarLong(r io.Reader) (VarLong, error) {
-	buf := bufio.NewReader(r)
 	var val int64
 	pos := 0
+	var currByte [1]byte
 
 	for {
-		currByte, err := buf.ReadByte()
+		_, err := r.Read(currByte[:])
 
 		if err != nil {
 			return VarLong{}, nil
 		}
 
-		val |= (int64(currByte) & 0x7F) << pos
+		val |= (int64(currByte[0]) & 0x7F) << pos
 
-		if (currByte & 0x80) == 0 {
+		if (currByte[0] & 0x80) == 0 {
 			break
 		}
 

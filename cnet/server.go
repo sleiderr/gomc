@@ -2,8 +2,12 @@ package cnet
 
 import (
 	"fmt"
+	"io"
 	"net"
 	"strconv"
+
+	"github.com/sleiderr/gomc/cnet/packet"
+	"github.com/sleiderr/gomc/game/client"
 )
 
 type CraftServer struct {
@@ -36,21 +40,44 @@ func (serv *CraftServer) ListenAndServe() error {
 	go func() {
 		defer conn.Close()
 		for {
-			client, err := conn.AcceptTCP()
+			rclient, err := conn.AcceptTCP()
 
 			if err != nil {
 				continue
 			}
 
-			_ = client.SetKeepAlive(true)
+			_ = rclient.SetKeepAlive(true)
 
-			go handleClient(NewClient(client))
+			go handleClient(client.NewClient(rclient))
 		}
 	}()
 
 	return nil
 }
 
-func handleClient(client Client) {
-	fmt.Printf("Received new connection from %s\n", client.raw.RemoteAddr().String())
+func handleClient(rClient *client.Client) {
+	defer rClient.Conn().Close()
+	fmt.Printf("Received incoming connection from %s\n", rClient.Conn().RemoteAddr())
+
+	for {
+		p, err := packet.ReadCraftPacket(rClient.Conn())
+
+		if err == io.EOF {
+			fmt.Println("Client disconnected")
+			break
+		}
+
+		if err != nil {
+			fmt.Println("Error while reading packet")
+			break
+		}
+
+		cp, err := packet.ParseRaw(p)
+		if err != nil {
+			fmt.Printf("Error while reading packet: %s\n", err.Error())
+			continue
+		}
+
+		rClient.HandlePacket(cp)
+	}
 }
