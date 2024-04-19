@@ -13,7 +13,7 @@ import (
 type Client struct {
 	raw   *net.TCPConn
 	state ClientState
-	login *LoginTransaction
+	Login *LoginTransaction
 }
 
 func NewClient(raw *net.TCPConn) *Client {
@@ -37,8 +37,6 @@ func (c *Client) HandlePacket(rPacket *packet.CraftPacket) error {
 		}
 	case Login:
 		err = c.handleLogin(rPacket)
-	case Configuration:
-		err = c.handleConfiguration(rPacket)
 	}
 
 	return err
@@ -88,6 +86,10 @@ func (c *Client) NextState() {
 
 func (c *Client) State() ClientState {
 	return c.state
+}
+
+func (c *Client) SetState(state ClientState) {
+	c.state = state
 }
 
 func (c *Client) Conn() *net.TCPConn {

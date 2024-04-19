@@ -34,22 +34,22 @@ func (c *Client) handleLogin(rPacket *packet.CraftPacket) error {
 			return fmt.Errorf("Invalid Login packet received")
 		}
 
-		c.login = new(LoginTransaction)
-		c.login.Username = lPacket.Name
-		c.login.PlayerUUID = lPacket.PlayerUuid
+		c.Login = new(LoginTransaction)
+		c.Login.Username = lPacket.Name
+		c.Login.PlayerUUID = lPacket.PlayerUuid
 
 		if !OnlineMode {
-			c.login.Status = LoginSuccess
+			c.Login.Status = LoginSuccess
 			c.dispatchLoginSuccess()
 		}
 	}
 
 	if rPacket.Id().Id == packet.LoginAckPacketId {
-		if c.login == nil || c.login.Status != LoginSuccess {
+		if c.Login == nil || c.Login.Status != LoginSuccess {
 			return fmt.Errorf("Unexpected login acknowledgment")
 		}
 
-		c.login.Status = ConfigurationOngoing
+		c.Login.Status = ConfigurationOngoing
 		c.state = Configuration
 	}
 
@@ -57,13 +57,13 @@ func (c *Client) handleLogin(rPacket *packet.CraftPacket) error {
 }
 
 func (c *Client) dispatchLoginSuccess() {
-	if c.login == nil || c.login.Status != LoginSuccess {
+	if c.Login == nil || c.Login.Status != LoginSuccess {
 		return
 	}
 
 	loginResp := packet.NewCraftPacket(packet.NewPacketType(byte(c.state), packet.LoginSuccessPacketId), &login.LoginSuccess{
-		PlayerUUID:      c.login.PlayerUUID,
-		Username:        c.login.Username,
+		PlayerUUID:      c.Login.PlayerUUID,
+		Username:        c.Login.Username,
 		PropertiesCount: 0,
 		Properties:      make([]login.LoginProperty, 0),
 	})
