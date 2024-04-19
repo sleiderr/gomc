@@ -39,6 +39,7 @@ func (serv *CraftServer) ListenAndServe() error {
 
 	go func() {
 		defer conn.Close()
+		packet.InitPacketTypes()
 		for {
 			rclient, err := conn.AcceptTCP()
 
@@ -72,7 +73,7 @@ func handleClient(rClient *client.Client) {
 			break
 		}
 
-		cp, err := packet.ParseRaw(p)
+		cp, err := packet.ParseRaw(p, byte(rClient.State()))
 		if err != nil {
 			fmt.Printf("Error while reading packet: %s\n", err.Error())
 			continue

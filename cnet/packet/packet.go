@@ -1,17 +1,7 @@
 package packet
 
 import (
-	"fmt"
-
-	"github.com/sleiderr/gomc/cnet/packet/slp"
 	"github.com/sleiderr/gomc/ctypes"
-)
-
-type CraftPacketType int32
-
-const (
-	Handshake CraftPacketType = 0
-	Ping      CraftPacketType = 1
 )
 
 type CraftPacket struct {
@@ -21,6 +11,7 @@ type CraftPacket struct {
 
 type CraftPacketPayload interface {
 	Raw() []byte
+	FillFromRaw([]byte) error
 }
 
 func NewCraftPacket(packetId CraftPacketType, payload CraftPacketPayload) *CraftPacket {
@@ -30,35 +21,31 @@ func NewCraftPacket(packetId CraftPacketType, payload CraftPacketPayload) *Craft
 	}
 }
 
-func ParseRaw(raw *RawCraftPacket) (*CraftPacket, error) {
+func ParseRaw(raw *RawCraftPacket, state byte) (*CraftPacket, error) {
 	var payload CraftPacketPayload
-	var err error
-	switch packetType := CraftPacketType(raw.packetId.Value()); packetType {
-	case Handshake:
-		p := &HandshakePacket{}
-		err = p.FillFromRaw(raw.Data())
-		payload = p
-	case Ping:
-		p := &slp.PingPacket{}
-		err = p.FillFromRaw(raw.Data())
-		payload = p
-	default:
-		return nil, fmt.Errorf("Unexpected packet")
+
+	packetType := CraftPacketType(NewPacketType(state, uint32(raw.packetId.Value())))
+	payload, err := MakePacket(packetType)
+
+	if err != nil {
+		return nil, err
 	}
+
+	err = payload.FillFromRaw(raw.Data())
 
 	if err != nil {
 		return nil, err
 	}
 
 	return &CraftPacket{
-		packetId: CraftPacketType(raw.packetId.Value()),
+		packetId: packetType,
 		payload:  payload,
 	}, nil
 }
 
 func (p *CraftPacket) AsRaw() *RawCraftPacket {
 	return &RawCraftPacket{
-		packetId: ctypes.AsVarInt(int32(p.packetId)),
+		packetId: ctypes.AsVarInt(int32(p.packetId.Id)),
 		data:     p.payload.Raw(),
 	}
 }

@@ -20,6 +20,10 @@ type StatusResponsePacket struct {
 	Status string
 }
 
+func (p *StatusResponsePacket) FillFromRaw(raw []byte) error {
+	return nil
+}
+
 func (p *StatusResponsePacket) Raw() []byte {
 	rawData := new(bytes.Buffer)
 	ctypes.WriteString(rawData, p.Status)

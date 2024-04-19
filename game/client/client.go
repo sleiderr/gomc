@@ -29,13 +29,13 @@ func (c *Client) HandlePacket(rPacket *packet.CraftPacket) error {
 	case Handshake:
 		err = c.handleHandshake(rPacket)
 	case Status:
-		if rPacket.Id() == packet.Handshake {
+		if rPacket.Id().Id == packet.HandshakePacketId {
 			err = c.handleHandshake(rPacket)
 		} else {
 			err = c.handleStatus(rPacket)
 		}
 	case Login:
-		if rPacket.Id() == packet.Handshake {
+		if rPacket.Id().Id == packet.HandshakePacketId {
 			err = c.handleHandshake(rPacket)
 		}
 	}
@@ -44,7 +44,7 @@ func (c *Client) HandlePacket(rPacket *packet.CraftPacket) error {
 }
 
 func (c *Client) handleStatus(rPacket *packet.CraftPacket) error {
-	if pPacket, ok := rPacket.Payload().(*slp.PingPacket); rPacket.Id() == packet.Ping && ok {
+	if pPacket, ok := rPacket.Payload().(*slp.PingPacket); rPacket.Id().Id == packet.PingPacketId && ok {
 		c.Pong(pPacket)
 	}
 
@@ -54,7 +54,7 @@ func (c *Client) handleStatus(rPacket *packet.CraftPacket) error {
 func (c *Client) handleHandshake(rPacket *packet.CraftPacket) error {
 	hPacket, ok := rPacket.Payload().(*packet.HandshakePacket)
 
-	if rPacket.Id() != packet.Handshake || !ok {
+	if rPacket.Id().Id != packet.HandshakePacketId || !ok {
 		return fmt.Errorf("Received unexpected packet during handshake")
 	}
 
@@ -65,7 +65,7 @@ func (c *Client) handleHandshake(rPacket *packet.CraftPacket) error {
 			return err
 		}
 
-		statusResp := packet.NewCraftPacket(packet.Handshake, &packet.StatusResponsePacket{Status: string(status)})
+		statusResp := packet.NewCraftPacket(packet.NewPacketType(byte(c.state), packet.HandshakePacketId), &packet.StatusResponsePacket{Status: string(status)})
 		c.raw.Write(statusResp.AsRaw().Bytes())
 	} else {
 		c.state = ClientState(hPacket.NextState)
@@ -75,7 +75,7 @@ func (c *Client) handleHandshake(rPacket *packet.CraftPacket) error {
 }
 
 func (c *Client) Pong(in *slp.PingPacket) {
-	c.raw.Write(packet.NewCraftPacket(packet.Ping, in).AsRaw().Bytes())
+	c.raw.Write(packet.NewCraftPacket(packet.NewPacketType(byte(c.state), 1), in).AsRaw().Bytes())
 }
 
 func (c *Client) NextState() {
