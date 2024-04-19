@@ -4,15 +4,20 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/sleiderr/gomc/cnet/packet/config"
 	"github.com/sleiderr/gomc/cnet/packet/login"
 	"github.com/sleiderr/gomc/cnet/packet/slp"
+	"github.com/sleiderr/gomc/utils"
 )
 
 const (
 	HandshakePacketId    = 0
 	LoginStartPacketId   = 0
+	ClientConfigPacketId = 0
 	PingPacketId         = 1
+	ConfigPluginMessage  = 1
 	LoginSuccessPacketId = 2
+	FinishConfigPacketId = 2
 	LoginAckPacketId     = 3
 )
 
@@ -33,6 +38,9 @@ func InitPacketTypes() {
 	registerPacketType(NewPacketType(1, 1), (*slp.PingPacket)(nil))
 	registerPacketType(NewPacketType(2, 0), (*login.LoginStart)(nil))
 	registerPacketType(NewPacketType(2, 3), (*login.LoginAck)(nil))
+	registerPacketType(NewPacketType(3, 0), (*config.ClientInformation)(nil))
+	registerPacketType(NewPacketType(3, ConfigPluginMessage), (*config.PluginMessage)(nil))
+	registerPacketType(NewPacketType(3, FinishConfigPacketId), (*utils.FieldlessPacket)(nil))
 }
 
 func MakePacket(t CraftPacketType) (CraftPacketPayload, error) {

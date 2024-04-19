@@ -37,6 +37,8 @@ func (c *Client) HandlePacket(rPacket *packet.CraftPacket) error {
 		}
 	case Login:
 		err = c.handleLogin(rPacket)
+	case Configuration:
+		err = c.handleConfiguration(rPacket)
 	}
 
 	return err
