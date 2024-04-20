@@ -9,3 +9,10 @@ func (p *FieldlessPacket) Raw() []byte {
 func (p *FieldlessPacket) FillFromRaw(raw []byte) error {
 	return nil
 }
+
+func EncodeBool(val bool) byte {
+	if val {
+		return 1
+	}
+	return 0
+}

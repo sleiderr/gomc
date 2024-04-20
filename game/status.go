@@ -40,7 +40,7 @@ func GetGameStatus() *GameStatus {
 	}
 
 	players := GamePlayers{
-		Max:    200,
+		Max:    16,
 		Online: 0,
 		Sample: make([]OnlinePlayer, 0),
 	}

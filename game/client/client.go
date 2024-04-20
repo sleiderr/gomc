@@ -1,10 +1,13 @@
 package client
 
 import (
+	"math/rand/v2"
 	"net"
 
 	"github.com/sleiderr/gomc/cnet/packet"
+	"github.com/sleiderr/gomc/cnet/packet/gamepacket"
 	"github.com/sleiderr/gomc/cnet/packet/slp"
+	"github.com/sleiderr/gomc/game"
 )
 
 type Client struct {
@@ -18,6 +21,30 @@ func NewClient(raw *net.TCPConn) *Client {
 		raw:   raw,
 		state: Handshake,
 	}
+}
+
+func (c *Client) SetSpawnPosition(newPos game.EntityLocation, angle float32) {
+	spawnPosPacket := packet.NewCraftPacket(packet.NewPacketType(byte(c.State()), packet.PlaySetSpawnPos), &gamepacket.DefaultSpawnPosition{
+		Location: newPos,
+		Angle:    angle,
+	})
+
+	c.Conn().Write(spawnPosPacket.AsRaw().Bytes())
+}
+
+func (c *Client) Teleport(newPos game.EntityPosition, rel bool) {
+	var flags byte
+	if rel {
+		flags = 0b11111
+	}
+
+	tpPacket := packet.NewCraftPacket(packet.NewPacketType(byte(c.State()), packet.PlaySyncPosition), &gamepacket.SynchronizePositionPacket{
+		Position:   newPos,
+		Flags:      gamepacket.TeleportFlags(flags),
+		TeleportID: rand.Int32(),
+	})
+
+	c.Conn().Write(tpPacket.AsRaw().Bytes())
 }
 
 func (c *Client) Pong(in *slp.PingPacket) {
