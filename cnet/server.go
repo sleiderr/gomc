@@ -8,6 +8,8 @@ import (
 
 	"github.com/sleiderr/gomc/cnet/packet"
 	"github.com/sleiderr/gomc/game/client"
+	"github.com/sleiderr/gomc/game/context"
+	"github.com/sleiderr/gomc/game/handlers"
 )
 
 type CraftServer struct {
@@ -40,6 +42,7 @@ func (serv *CraftServer) ListenAndServe() error {
 	go func() {
 		defer conn.Close()
 		packet.InitPacketTypes()
+		handlers.InitDefaultHandlers()
 		for {
 			rclient, err := conn.AcceptTCP()
 
@@ -79,6 +82,13 @@ func handleClient(rClient *client.Client) {
 			continue
 		}
 
-		rClient.HandlePacket(cp)
+		ctx := context.NewContext(rClient, cp)
+		for _, route := range handlers.GetHandlers(cp.Id()) {
+			if !route.StateBound && route.PacketID != ctx.Packet().Id().Id {
+				continue
+			}
+
+			route.Handler(ctx)
+		}
 	}
 }
