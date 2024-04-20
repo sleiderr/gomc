@@ -7,24 +7,43 @@ import (
 
 type PacketHandler func(*context.Context) error
 
-var handlersRegistry = make(map[packet.CraftPacketType][]PacketHandler)
+type packetRoute struct {
+	StateBound bool
+	PacketID   uint32
+	Handler    PacketHandler
+}
+
+var handlersRegistry = make(map[byte][]packetRoute)
 
 func InitDefaultHandlers() {
+	RegisterStatusHandlers()
+	RegisterLoginHandlers()
 	RegisterConfigHandlers()
 }
 
-func RegisterHandler(pType packet.CraftPacketType, handler PacketHandler) {
-	if handlers, ok := handlersRegistry[pType]; ok {
-		handlersRegistry[pType] = append(handlers, handler)
+func RegisterStateHandler(pState byte, handler PacketHandler) {
+	route := packetRoute{true, 0, handler}
+	if handlers, ok := handlersRegistry[pState]; ok {
+		handlersRegistry[pState] = append(handlers, route)
 	} else {
-		handlersRegistry[pType] = make([]PacketHandler, 1)
-		handlersRegistry[pType][0] = handler
+		handlersRegistry[pState] = make([]packetRoute, 1)
+		handlersRegistry[pState][0] = route
 	}
 }
 
-func GetHandlers(pType packet.CraftPacketType) []PacketHandler {
-	var handlers []PacketHandler
-	if sHandlers, ok := handlersRegistry[pType]; ok {
+func RegisterHandler(pType packet.CraftPacketType, handler PacketHandler) {
+	route := packetRoute{false, pType.Id, handler}
+	if handlers, ok := handlersRegistry[pType.State]; ok {
+		handlersRegistry[pType.State] = append(handlers, route)
+	} else {
+		handlersRegistry[pType.State] = make([]packetRoute, 1)
+		handlersRegistry[pType.State][0] = route
+	}
+}
+
+func GetHandlers(pType packet.CraftPacketType) []packetRoute {
+	var handlers []packetRoute
+	if sHandlers, ok := handlersRegistry[pType.State]; ok {
 		handlers = sHandlers
 	}
 

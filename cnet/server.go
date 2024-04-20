@@ -82,10 +82,13 @@ func handleClient(rClient *client.Client) {
 			continue
 		}
 
-		rClient.HandlePacket(cp)
 		ctx := context.NewContext(rClient, cp)
-		for _, handler := range handlers.GetHandlers(cp.Id()) {
-			handler(ctx)
+		for _, route := range handlers.GetHandlers(cp.Id()) {
+			if !route.StateBound && route.PacketID != ctx.Packet().Id().Id {
+				continue
+			}
+
+			route.Handler(ctx)
 		}
 	}
 }

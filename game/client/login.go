@@ -1,8 +1,6 @@
 package client
 
 import (
-	"fmt"
-
 	"github.com/google/uuid"
 	"github.com/sleiderr/gomc/cnet/packet"
 	"github.com/sleiderr/gomc/cnet/packet/login"
@@ -26,37 +24,7 @@ type LoginTransaction struct {
 	PlayerUUID uuid.UUID
 }
 
-func (c *Client) handleLogin(rPacket *packet.CraftPacket) error {
-	if rPacket.Id().Id == packet.LoginStartPacketId {
-		lPacket, ok := rPacket.Payload().(*login.LoginStart)
-
-		if !ok {
-			return fmt.Errorf("Invalid Login packet received")
-		}
-
-		c.Login = new(LoginTransaction)
-		c.Login.Username = lPacket.Name
-		c.Login.PlayerUUID = lPacket.PlayerUuid
-
-		if !OnlineMode {
-			c.Login.Status = LoginSuccess
-			c.dispatchLoginSuccess()
-		}
-	}
-
-	if rPacket.Id().Id == packet.LoginAckPacketId {
-		if c.Login == nil || c.Login.Status != LoginSuccess {
-			return fmt.Errorf("Unexpected login acknowledgment")
-		}
-
-		c.Login.Status = ConfigurationOngoing
-		c.state = Configuration
-	}
-
-	return nil
-}
-
-func (c *Client) dispatchLoginSuccess() {
+func (c *Client) DispatchLoginSuccess() {
 	if c.Login == nil || c.Login.Status != LoginSuccess {
 		return
 	}
